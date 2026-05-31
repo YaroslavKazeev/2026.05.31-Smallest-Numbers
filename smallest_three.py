@@ -6,6 +6,11 @@ Implement the algorithm in `find_three_smallest_distinct_numbers`.
 
 def find_three_smallest_distinct_numbers(numbers):
     # Put your solution here
+    if len(numbers) < 3:
+        raise Exception("Array must contain at least three elements.")
+    elif len(set(numbers)) < 3:
+        raise Exception("Array does not contain three distinct numbers.")
+
     smallest = []
     return smallest
 
