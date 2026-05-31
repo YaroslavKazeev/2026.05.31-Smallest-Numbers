@@ -11,16 +11,16 @@ def find_three_smallest_distinct_numbers(nums):
     elif len(set(nums)) < 3:
         raise Exception("Array does not contain three distinct numbers.")
     else:
-        unique = set(nums[0:3])
-        window = sorted(list(unique))
+        looked = set(nums[0:3])
+        window = sorted(list(looked))
 
         for i in range(3, len(nums)):
-            if nums[i] not in unique:
+            if nums[i] not in looked:
                 for j in range(len(window)):
                     if nums[i] < window[j]:
                         window.insert(j, nums[i])
                         window = window[0:3]
-                        unique = set(window)
+                        looked.add(nums[i])
                         break
 
         print("window", window)
