@@ -15,3 +15,7 @@ def test_error_cases(idx):
     with pytest.raises(Exception) as exc:
         find_three_smallest_distinct_numbers(case["input"])
     assert expected_message in str(exc.value)
+
+
+if __name__ == "__main__":
+    raise SystemExit(pytest.main([__file__]))
