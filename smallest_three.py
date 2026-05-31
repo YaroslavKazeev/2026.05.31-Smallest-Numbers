@@ -4,15 +4,28 @@ Implement the algorithm in `find_three_smallest_distinct_numbers`.
 """
 
 
-def find_three_smallest_distinct_numbers(numbers):
+def find_three_smallest_distinct_numbers(nums):
     # Put your solution here
-    if len(numbers) < 3:
+    if len(nums) < 3:
         raise Exception("Array must contain at least three elements.")
-    elif len(set(numbers)) < 3:
+    elif len(set(nums)) < 3:
         raise Exception("Array does not contain three distinct numbers.")
+    else:
+        unique = set(nums[0:3])
+        window = sorted(list(unique))
 
-    smallest = []
-    return smallest
+        for i in range(3, len(nums)):
+            if nums[i] not in unique:
+                for j in range(len(window)):
+                    if nums[i] < window[j]:
+                        window.insert(j, nums[i])
+                        window = window[0:3]
+                        unique = set(window)
+                        break
+
+        print("window", window)
+
+    return window
 
 
 # Prepared use cases for implementation and testing (do not execute here).
