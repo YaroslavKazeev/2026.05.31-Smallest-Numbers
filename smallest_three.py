@@ -5,9 +5,17 @@ Implement the algorithm in `find_three_smallest_distinct_numbers`.
 
 
 def find_three_smallest_distinct_numbers(numbers):
-    # Put your solution here
-    smallest = []
-    return smallest
+    if not isinstance(numbers, (list, tuple)):
+        raise TypeError("Input must be a list or tuple of numbers.")
+
+    if len(numbers) < 3:
+        raise ValueError("Array must contain at least three elements.")
+
+    distinct_sorted = sorted(set(numbers))
+    if len(distinct_sorted) < 3:
+        raise ValueError("Array does not contain three distinct numbers.")
+
+    return distinct_sorted[:3]
 
 
 # Prepared use cases for implementation and testing (do not execute here).
