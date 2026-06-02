@@ -23,8 +23,6 @@ def find_three_smallest_distinct_numbers(nums):
                         looked.add(nums[i])
                         break
 
-        print("window", window)
-
     return window
 
 
