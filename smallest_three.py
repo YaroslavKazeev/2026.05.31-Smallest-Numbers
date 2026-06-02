@@ -6,10 +6,12 @@ Implement the algorithm in `find_three_smallest_distinct_numbers`.
 
 def find_three_smallest_distinct_numbers(nums):
     # Put your solution here
+    if not isinstance(nums, (list, tuple)):
+        raise TypeError("Input must be a list or tuple of numbers.")
     if len(nums) < 3:
-        raise Exception("Array must contain at least three elements.")
+        raise ValueError("Array must contain at least three elements.")
     elif len(set(nums)) < 3:
-        raise Exception("Array does not contain three distinct numbers.")
+        raise ValueError("Array does not contain three distinct numbers.")
     else:
         looked = set(nums[0:3])
         window = sorted(list(looked))
@@ -22,7 +24,9 @@ def find_three_smallest_distinct_numbers(nums):
                         window = window[0:3]
                         looked.add(nums[i])
                         break
-
+                if len(window) < 3:
+                    window.append(nums[i])
+                    looked.add(nums[i])
     return window
 
 
