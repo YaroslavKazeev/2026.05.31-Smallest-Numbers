@@ -10,8 +10,6 @@ def find_three_smallest_distinct_numbers(nums):
         raise TypeError("Input must be a list or tuple of numbers.")
     if len(nums) < 3:
         raise ValueError("Array must contain at least three elements.")
-    elif len(set(nums)) < 3:
-        raise ValueError("Array does not contain three distinct numbers.")
     else:
         looked = set(nums[0:3])
         window = sorted(list(looked))
@@ -27,6 +25,8 @@ def find_three_smallest_distinct_numbers(nums):
                 if len(window) < 3:
                     window.append(nums[i])
                     looked.add(nums[i])
+    if len(window) < 3:
+        raise ValueError("Array does not contain three distinct numbers.")
     return window
 
 
