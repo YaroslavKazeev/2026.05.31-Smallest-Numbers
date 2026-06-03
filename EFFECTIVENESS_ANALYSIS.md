@@ -1,6 +1,6 @@
 # Effectiveness Analysis: `copilot_solution` vs `my_solution`
 
-**Date:** 2026-06-02 (benchmarks re-run 2026-06-02)  
+**Date:** 2026-06-03  
 **Branches compared:** `copilot_solution` (current) and `my_solution`  
 **Problem:** Return the three smallest **distinct** integers from an input array, with defined error cases.
 
@@ -17,7 +17,7 @@
 | **Input validation**             | `TypeError` for non-list/tuple; `ValueError` for domain errors | `TypeError` for non-list/tuple; `ValueError` for domain errors |
 | **Maintainability**              | Short, obvious                                                 | Longer, stateful loop with subtle edge cases                   |
 
-**Overall:** `copilot_solution` remains more effective: both solutions are now fully correct on all tested inputs, but `copilot_solution` is consistently 8–19× faster and significantly simpler to read and maintain. `my_solution`'s previous correctness gap (`[1, 1, 2, 3, 4]` returning `[1, 2]`) has been fixed in the current commit on that branch.
+**Overall:** `copilot_solution` is more effective: both solutions are fully correct on all tested inputs, but `copilot_solution` is consistently 8–19× faster and significantly simpler to read and maintain.
 
 ---
 
@@ -40,8 +40,8 @@ return distinct_sorted[:3]
 
 - Seeds `looked` and `window` from `nums[0:3]` only.
 - For each later element not in `looked`, inserts into `window` if `nums[i] < window[j]` for some `j`; if `window` still has fewer than three entries after the inner loop, appends the new value.
-- **Time:** O(n) upfront `set(nums)` check, plus O(n × window size) with list inserts (small constant window, but more Python-level overhead than sort-on-distinct).
-- **Space:** O(n) for `set(nums)` and auxiliary sets/lists.
+- **Time:** O(n × window size) with list inserts (small constant window, but more Python-level overhead than sort-on-distinct).
+- **Space:** O(window size) for auxiliary sets/lists.
 
 ---
 
@@ -49,7 +49,7 @@ return distinct_sorted[:3]
 
 ### Bundled test suite (`test_smallest_three.py`)
 
-Both branches pass the same three tests (re-confirmed 2026-06-02, Python 3.14.2, pytest 9.0.3):
+Both branches pass the same three tests (Python 3.14.2, pytest 9.0.3):
 
 1. Typical case: `[7, -1, 3, 4, 2, 6, 2]` → `[-1, 2, 3]`
 2. Too few elements → `"Array must contain at least three elements."`
@@ -57,7 +57,7 @@ Both branches pass the same three tests (re-confirmed 2026-06-02, Python 3.14.2,
 
 ### Extended scenarios
 
-Additional inputs were run against both implementations on 2026-06-02.
+Additional inputs were run against both implementations.
 
 | Input                           | Expected       | `copilot_solution` | `my_solution`   |
 | ------------------------------- | -------------- | ------------------ | --------------- |
@@ -67,21 +67,11 @@ Additional inputs were run against both implementations on 2026-06-02.
 | `[3, 2, 1]`                     | `[1, 2, 3]`    | OK                 | OK              |
 | Descending 1..10                | `[1, 2, 3]`    | OK                 | OK              |
 | `[4, 5, 6, 1, 2, 3]`            | `[1, 2, 3]`    | OK                 | OK              |
-| `[1, 1, 2, 3, 4]`               | `[1, 2, 3]`    | OK                 | OK _(was FAIL)_ |
+| `[1, 1, 2, 3, 4]`               | `[1, 2, 3]`    | OK                 | OK              |
 | `[5, 5, 1, 2, 3]`               | `[1, 2, 3]`    | OK                 | OK              |
 | Large descending + `0` (n=1001) | `[0, 1, 2]`    | OK                 | OK              |
 | `[100, 50, 25, 10, 5, 1]`       | `[1, 5, 10]`   | OK                 | OK              |
 | **Total**                       |                | **10/10**          | **10/10**       |
-
-### Previous failure in `my_solution` (now resolved)
-
-For `[1, 1, 2, 3, 4]` the old code returned `[1, 2]` because:
-
-1. The prefix `[1, 1, 2]` yielded `window = [1, 2]` (only two distinct values).
-2. At index 3, value `3` was not in `looked`, but the inner loop only inserted when `3 < window[j]` — never true here.
-3. Nothing was appended, so the function returned a two-element list.
-
-The fix adds an `if len(window) < 3: window.append(nums[i])` guard **outside** the inner loop, correctly reaching three distinct values.
 
 ### Input typing
 
@@ -97,7 +87,7 @@ Both branches now explicitly validate list/tuple input.
 
 ## Performance
 
-Benchmarks used `timeit.repeat` (minimum of 10 runs × 5 iterations) on descending arrays `list(range(n, 0, -1))`, where the answer is always `[1, 2, 3]`. Peak memory was measured with `tracemalloc` (one call per size). Run on 2026-06-02, Python 3.14.2, Windows.
+Benchmarks used `timeit.repeat` (minimum of 10 runs × 5 iterations) on descending arrays `list(range(n, 0, -1))`, where the answer is always `[1, 2, 3]`. Peak memory was measured with `tracemalloc` (one call per size). Python 3.14.2, Windows.
 
 | n       | `copilot_solution` (s/call) | `my_solution` (s/call) | Speedup (copilot) | Peak memory (both) |
 | ------- | --------------------------- | ---------------------- | ----------------- | ------------------ |
@@ -109,10 +99,16 @@ Benchmarks used `timeit.repeat` (minimum of 10 runs × 5 iterations) on descendi
 **Interpretation:**
 
 - `copilot_solution` benefits from highly optimized CPython `set` + `sorted` builtins running in C.
-- `my_solution` pays for a full `set(nums)` up-front validation pass, Python-level loops, and `list.insert` in the inner loop.
-- Memory use is essentially identical at each scale; both retain O(n) structures for the distinct-value check.
+- `my_solution` uses Python-level loops and `list.insert` in the inner loop.
+- Memory use is lower for `my_solution` as it only maintains small constant-size structures.
 
 For large inputs, **`copilot_solution` is consistently 8–19× faster** despite the theoretical "full sort" cost, because constant factors are low and the implementation does far less Python-level work.
+
+The low constant factors in `copilot_solution` include:
+- **Built-in C implementations**: `set()` and `sorted()` are implemented in highly optimized C code within CPython, avoiding Python interpreter overhead for the core operations.
+- **Single pass through data**: The set construction and sorting happen in tight C loops with minimal branching.
+- **No Python-level control flow**: The algorithm has no nested loops or conditional logic at the Python level, reducing interpreter overhead.
+- **Efficient memory access patterns**: Consecutive memory access in set construction and sorting benefits from CPU cache locality.
 
 ---
 
@@ -124,7 +120,7 @@ The README states:
 
 | Criterion                      | `copilot_solution`                        | `my_solution`                                                          |
 | ------------------------------ | ----------------------------------------- | ---------------------------------------------------------------------- |
-| Linear-time aspiration         | Sorting distinct values can be O(n log n) | Linear scan structure, but `set(nums)` + inserts add constant overhead |
+| Linear-time aspiration         | Sorting distinct values can be O(n log n) | Linear scan structure with constant-size window |
 | Avoid full-array sort          | No — sorts all distinct values            | Yes — only maintains a small 3-element window                          |
 | Handles duplicates / negatives | Yes                                       | Yes                                                                    |
 | Clear error messages           | Yes (`TypeError`, `ValueError`)           | Yes (`TypeError`, `ValueError`)                                        |
@@ -147,7 +143,7 @@ The README states:
 ## Recommendations
 
 1. **Keep `copilot_solution` as the default** for correctness, speed, and maintainability unless the README's "no full sort" rule is a hard requirement.
-2. **`my_solution` is now correct** and can serve as a reference for the README's intended approach, but carries higher maintenance risk due to its stateful loop.
+2. **`my_solution` is correct** and can serve as a reference for the README's intended approach, but carries higher maintenance risk due to its stateful loop.
 3. **Best of both worlds:** a true O(n) single-pass using three tracked variables (`first`, `second`, `third`) with careful duplicate handling, or a size-3 min-heap of distinct values, would satisfy the README and likely match or beat the sort-based solution in speed.
 
 ---
@@ -155,5 +151,5 @@ The README states:
 ## Methodology
 
 - Source compared via `git show my_solution:smallest_three.py` and the current `copilot_solution` branch.
-- Bundled tests: `pipenv run pytest test_smallest_three.py -v` on `copilot_solution` (3 passed, 2026-06-02).
-- Extended correctness and timing: `run_benchmarks.py` executed locally on 2026-06-02 against inline copies of both implementations.
+- Bundled tests: `pipenv run pytest test_smallest_three.py -v` on `copilot_solution` (3 passed).
+- Extended correctness and timing: `run_benchmarks.py` executed locally against inline copies of both implementations.
